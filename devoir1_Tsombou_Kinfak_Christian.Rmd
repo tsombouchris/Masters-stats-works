@@ -1,0 +1,474 @@
+---
+title: "Devoir 1 sur R"
+author: "TSOMBOU KINFAK CHRISTIAN"
+date: "A rendre au plus tard le 01/11/2015"
+output: pdf_document
+---
+
+L'objectif de ce devoir est de vérifier que vous maîtrisez les commandes de base du logiciel R. Les commandes utilisées ici pourraient vous être utiles dans des études réelles. Par ailleurs, nous en profitons pour revoir 
+quelques concepts de statistique. 
+
+# Evaluation
+Il y a 20 questions. Chaque question vaut 1 point. A chaque question, vous devrez utiliser du code R pour répondre à la question sauf lorsqu'on vous demandera une réponse ``manuscrite''. Il peut y avoir plusieurs façons de répondre à une question, je n'en demande qu'une seule. Vous devrez répondre directement dans le fichier au format .Rmd aux endroits qui vous seront indiqués. Il est recommandé ensuite de compiler le fichier depuis RStudio en cliquant sur l'onglet "Knit HTML" (ou Knit PDF ou Knit Word) afin de pouvoir visualiser vos réponses sous forme de rapport. 
+
+# Les questions
+## Partie 1
+
+### Q1. ### 
+Soit la fonction $f:x\mapsto x+2+\frac{2}{3}cos(x)$. Pour représenter graphiquement cette fonction sur R, on calcule $f(x)$ pour plusieurs valeurs de $x$ et ensuite on relie les points entre eux. Le but est de prendre des valeurs de $x$ suffisamment rapprochées pour avoir une allure de la courbe lisse. On va représenter la courbe pour des valeurs de $x\in[0;10]$. 
+En utilisant les fonctions adéquates vues en cours, créer l'objet **xtab** suivant défini par le vecteur :
+$\begin{pmatrix}
+0 \\
+0.2 \\
+0.4 \\
+\vdots \\
+9.8 \\
+10
+\end{pmatrix}$.
+
+NB : On pensera à utiliser la fonction *seq()*  
+```{r}
+# Création de l'objet xtab à l'aide de la fonction "seq()" utile pour la génération
+# de séquences particulières.
+
+ xtab<-seq(from=0, to=10, by=0.2)
+ head(xtab)
+
+```
+
+### Q2. ###  
+A partir de l'objet **xtab**, calculer l'objet **ytab** défini par le vecteur suivant : $ytab=xtab+2+\frac{2}{3}cos(xtab)$.
+
+```{r}
+# Pour calculer l'objet ytab ci-dessus défini, nous allons faire recours au principe des
+# opérations élémentaires entre vacteurs dans R qui nous permet d'obtenir ytab par 
+# le calcul direct suivant:
+ 
+ytab<-xtab+2+(2/3)*cos(xtab)
+
+```
+
+### Q3. ###
+A présent, on va simuler $n$ couples de points $(x_i,y_i)$, $i=1,...,n$ dont le lien entre $y$ et $x$ est donné par la fonction $f$. Affecter la valeur 10000 à l'objet **n**, puis créer les objets suivants : 
+
+* **x**, vecteur de taille **n**, distribué selon une loi uniforme de paramètres $min=0$ et $max=10$. La fonction à utiliser est la fonction **runif()**. 
+* **e**, vecteur de taille **n**, simulé selon une loi normale $\mathcal{N}(\mu=0,\sigma^2=3)$. On utilisera la fonction **rnorm()**.
+* **z**, vecteur de taille **n**, qui vaut : $z=f(x)$.
+* **y**, vecteur de taille **n**, qui vaut : $y=z+e$.
+
+
+```{r}
+# Simulons les vecteurs de taille n=10000 x, e, z et y définis ci-dessus.
+   n<-10000
+   x<-runif(n, min = 0, max = 10)
+   e<-rnorm(n, mean = 0, sd = sqrt(3) )
+   z<-x+2+(2/3)*cos(x)
+   y<-z+e
+
+```
+
+### Q4. ### 
+En utilisant les fonctions **mean()**, **var()** et **cov()**, vérifier que, à 4 décimales près (on pourra utiliser la fonction **round()**) :
+$$\bar{y}=\bar{z}+\bar{e}$$
+et que :
+$$var(y)=var(z)+var(e)+2\times cov(z,e)$$
+On rappelle que $\bar{y}$ n'est rien d'autre que la moyenne empirique du vecteur **y**. 
+```{r}
+# La moyenne empirique étant obtenue sous R grace à la fonction "mean()", il suffit 
+# de vérifier pour :
+   
+    # le premier volet de la question que la valeur de l'expression logique        
+    # round(mean(y),4)==round(mean(z)+mean(e),4) est TRUE. 
+   
+    round(mean(y), 4)==round(mean(z)+mean(e), 4)
+   
+    # le deuxième volet de la question que la valeur de l'expression logique            
+    # round(var(y), 4)==round(var(z)+var(e) + 2*cov(z,e), 4) est TRUE.
+   
+    round(var(y), 4)==round(var(z)+var(e) + 2*cov(z,e), 4)
+   
+```
+
+### Q5. ###  
+Dans la figure suivante, on a représenté la fonction $f$ ainsi que les points simulés $(x_i,y_i)$, $i=1,...,n$.
+
+```{r,echo=FALSE, eval=TRUE}
+# vous pouvez rempler eval=FALSE par eval=TRUE pour afficher le graphique
+plot(x, y, col="lightgrey")
+lines(xtab, ytab,col="red")
+```
+
+Quelle est la proportion de points qui vérifient : $y>z$ ? Pour cela, vous pouvez vous inspirer de l'exemple présenté en Annexe. 
+
+```{r}
+# Pour cette question, nous allons sommer tous les "TRUE" (donc les 1) qu'il y a dans le vecteur
+# logique "y>z", en divisant ensuite le résultat obtenu par la longueur de y (soit 10000) on aura 
+# la proportion recherchée.
+
+prop<-(sum(y>z)/length(y))
+prop                       # affichons la proportion
+paste("Ainsi",paste(100*prop, "%", sep=""), "de points vérifient y>z.", sep=" ") #dans une phrase
+
+```
+Est-ce que le résultat obtenu est proche du résultat auquel on aurait pu s'attendre ?
+
+Mettre vos commentaires ici : le résultat obtenu (environ 50%) est proche de celui auquel on aurait pu s'attendre. En effet, e suivant une loi normale centrée de variance 3, on s'attendrait à ce que ses points soit symétriquement distribués de part et d'autre de 0 avec une variance de 3.Ceci voudrait dire qu'environ 50% de ses points seraient à droite de 0 et donc que dans l'expression y=z+e on aurait 50 fois sur 100 y=z+e>z soit y>z.
+
+### Q6. ###  
+On va essayer d'ajuster une droite de régression de la forme $y=ax+b$ au nuage de points $(x_i,y_i)$, $i=1,...,n$. Dans le cas où on a une seule variable explicative, on peut utiliser les formules suivantes des estimateurs des Moindres Carrés Ordinaires :
+$$\hat{a}=\frac{cov(x,y)}{var(x)}$$
+$$\hat{b}=\bar{y}-\hat{a}\bar{x}$$
+
+Calculer les objets **hat.a** et **hat.b** qui correspondent aux formules ci-dessus.  
+```{r}
+# Calculons les objets hat.a et hat.b
+   
+    hat.a<-cov(x,y)/var(x)
+    hat.a
+    hat.b<-mean(y)-hat.a*mean(x)
+    hat.b
+
+```
+
+
+### Q7. ###   
+Calculer les objets suivants : 
+
+* **haty**, vecteur de taille $n$ qui vaut $\hat y= \hat{a}x+\hat{b}$. Ce vecteur s'appelle le vecteur des valeurs ajustées ou valeurs prédites du modèle de régression linéaire.
+* **u**, vecteur de taille $n$ qui vaut : $u=y-\hat{y}$. Le vecteur $u$ est le vecteur des résidus.   
+
+```{r}
+# Calculons les vecteurs haty et u défini en Q7.
+    
+    haty<-hat.a*x+hat.b
+    head(haty)           # six premiers éléments de haty
+    
+    u<-y-haty
+    head(u)              # six premiers éléments de u
+
+```
+
+### Q8. ### 
+Dans la figure suivante , nous avons représentés le nuage de points $(\hat{y_i},u_i)$, $i=1,...,n$. Les points rouges correspondent à la moyenne de $u$ observée dans chaque classe de valeurs ajustées représentée par des traits verticaux. On va calculer la valeur (en ordonnée) de ces points rouges. Pour cela :
+
+* créer la variable **haty.quali** qui discrétise la variable **haty** en 5 intervalles $[2,4]$, $]4,6]$, $]6,8]$, $]8,10]$ et $]10,12]$. On pourra utiliser la fonction **cut()** dont vous trouverez un exemple d'utilisation en Annexe.
+* A l'aide de la fonction **by()** vue en cours, calculer la moyenne de **u** observée dans chaque classe de valeurs ajustées précédémment créée.
+
+
+```{r}
+# Discrétisons haty en haty.quali suivant le découpage indiqué puis, calculons 
+# la moyenne de u dans chaque classe obtenue
+    
+    haty.quali <- cut(haty, breaks=c(2,4,6,8,10,12))    # discrétisation de haty
+    table(haty.quali)                                   # effectifs de haty.quali par classe
+    
+    moy.class<-by(u,haty.quali,mean )                   #calcul des moyennes par classe
+    moy.class                                           # affichage des moyennes
+
+```
+
+```{r,echo=FALSE, eval=TRUE}
+# vous pouvez rempler eval=FALSE par eval=TRUE pour afficher le graphique
+plot(haty,u,xlab="valeurs ajustées", ylab="residus", col="royalblue")
+abline(v=c(2,4,6,8,10,12), lty=2)
+points(c(3,5,7,9,11), as.numeric(moy.class), pch=16, col="red", cex=2)
+```
+
+NB : lorsqu'on ajuste un modèle linéaire à un nuage de points, il est essentiel de vérifier "après-coup" qu'un certain nombre d'hypothèses utilisées sont vérifiées. Parmi ces hypothèses, le graphique précédent nous aide à vérifier que la moyenne des résidus est constante. Le calcul précédent laisse suggérer que la moyenne des résidus n'est pas vraiment constante et ceci se voit également à travers la forme du nuage de points qui a  une forme oscillatoire. Cette forme particulière nous indique que la variable explicative choisie n'est pas suffisante pour expliquer complètement la variation de $Y$.
+
+### Q9. ###  
+Si le modèle précédent s'est mal ajusté aux données, on peut supposer que c'est parce qu'on a ommis d'ajouté le terme $cos(x)$ comme variable explicative. Aussi, on suppose que le modèle est de la forme :
+$$y_i=\beta_0+\beta_1x_i+\beta_2cos(x_i)+\epsilon_i$$ où $\epsilon_i$ est un bruit gaussien. On peut également écrire ce modèle de façon matricielle : $y=X\beta +\epsilon$, où
+$X=\begin{pmatrix}
+1 & x_1 & cos(x_1) \\
+1 & x_2 & cos(x_2) \\
+\vdots & \vdots & \vdots \\
+1 & x_n & cos(x_n)
+\end{pmatrix}$
+et $\beta=\begin{pmatrix}
+\beta_0 \\
+\beta_1\\
+\beta_2
+\end{pmatrix}$.
+
+Créer l'objet **X**, de classe matrice telle que définie ci-dessus.
+```{r}
+# créons l'objet de classe matrice X
+
+X<-matrix(c(rep(1,10000), x, cos(x)), nrow = 10000, ncol=3)
+
+head(X)                                                    # six premiers éléments de X
+
+
+```
+
+
+### Q10. ###  
+L'objectif est de trouver un estimateur de $\beta$. Une solution du problème consiste à résoudre le système d'équation : 
+$$(X^TX)\beta=X^Ty$$ où $\beta$ est l'inconnu du problème. En utilisant la fontion **solve()**, créer l'objet **hatbeta**, vecteur qui contient la solution du problème ci-dessus.  
+
+```{r}
+# Calculons l'estimateur de beta grace à la formule solve.
+
+
+hatbeta<-solve(t(X)%*%X,t(X)%*%y)       # calcul de hatbeta
+
+hatbeta                                 # affichage de hatbeta
+
+```
+
+### Q11. ### 
+Calculer l'objet **haty.b** qui contient le vecteur des valeurs ajustées défini par $X\hat\beta$. Calculer ensuite l'objet **u.b**, vecteur des résidus défini par $y-\hat{y}$.
+```{r}
+# calclons u.b
+
+haty.b<-X%*%hatbeta       # calculons d'abord le vecteur des valeurs ajustées haty.b
+head(haty.b)              # six premières valeurs de haty.b
+
+
+u.b<-y-haty.b            # calcul du vecteur des résidus u.b
+head(u.b)                # six premières valeurs de haty.b
+ 
+
+```
+
+### Q12. ### 
+Une façon pour mesurer la qualité d'ajustement d'un modèle sur les données est d'utiliser l'erreur quadratique moyenne (EQM) dont la formule est donnée par $\frac{1}{n}\sum_{i=1}^nu_i^2$.
+Calculer l'EQM sur les résidus **u** et **u.b** des deux modèles estimés. 
+```{r}
+# Calculons l'EQM sur les résidus u (que nous noterons "EQM_u") et sur les résidus u.b (que nous
+# noterons "EQM_u.b")
+
+EQM_u<-(1/length(u))*sum(u^2)           # erreur quadratique moyenne sur u      
+EQM_u
+
+EQM_u.b<-(1/length(u.b))*sum(u.b^2)     # erreur quadratique moyenne sur u.b
+EQM_u.b
+
+```
+Que constatez-vous et que pouvez-vous en déduire ?
+
+Mettre vos commentaires ici : On peut constater que EQM_u.b < EQM_u. On peut en déduire que l'ajustement du second modèle est de meilleur qualité que celui du premier.
+
+
+### Q13. ###  
+Pour représenter graphiquement les deux modèles sur le nuage de points, créer à partir de **xtab** les objets suivants : 
+
+* **y.mod1**, vecteur de même taille que **xtab** défini par : $y.mod1=\hat{a}xtab+\hat{b}$.
+* **y.mod2**, vecteur de même taille que **xtab** défini par : $y.mod2=\hat\beta_0+\hat\beta_1xtab+\hat\beta_2cos(xtab)$
+
+
+```{r}
+# Créons les vecteurs y.mod1 et y.mod2
+
+y.mod1<-hat.a*xtab+hat.b      # valeurs de y pour le modèle 1
+
+#Utilisons la forme matricielle, pour cela construisons la matrice XTAB suivante:
+XTAB<-matrix(c(rep(1,length(xtab)), xtab, cos(xtab)), nrow = length(xtab), ncol=3)
+
+y.mod2<-XTAB%*%hatbeta        # valeurs de y pour le modèle 2
+
+```
+
+On a représenté dans la figure ci-dessous le nuage de points $(x_i,y_i)$ avec une représentation des deux modèles estimés : 
+
+```{r,echo=FALSE, eval=TRUE}
+# vous pouvez rempler eval=FALSE par eval=TRUE pour afficher le graphique
+plot(x, y, col="lightgrey")
+lines(xtab, y.mod1, col="blue", lty=2, lwd=3)
+lines(xtab, y.mod2, col="red", lty=3, lwd=3)
+```
+
+
+
+## Partie 2
+
+### Q14. ### 
+Importer la table **bdd1.csv** dans un objet appelé **don2** à l'aide de la fonction **read.csv2()**. Noter que les premières lignes du fichier **bdd1.csv** contiennent des informations sur les données. Une possibilité pour les éviter dans la lecture du fichier de données est d'utiliser l'argument **skip=**. Afficher les 6 premières lignes de l'objet **don2**.
+
+```{r}
+# Importons dans don2 la table bdd1.csv à l'aide de la fonction read.csv2
+
+don2<-read.csv2("C:/Users/Tsobouchris/Documents/R Directory/M2STATECO/Année 1/Donnees Devoirs/bdd1.csv", header=TRUE, skip = 4)
+
+head(don2)                               # six premières valeurs de don2
+
+```
+
+### Q15. ### 
+Quelle est la dimension de l'objet **don2** (fonction **dim**) ? Existe-t-il des doublons, c'est-à-dire des lignes qui sont identiques ? Si oui, combien de lignes sont concernées ? 
+Supprimer les doublons de l'objet **don2**. On pourra utiliser la fonction **duplicated** pour répondre à la question.
+
+```{r}
+# Dimension de don2 et doublons
+
+#dimension de don2
+dim(don2)
+
+# Il existe dans don2 des doublons comme le montre la valeur de l'expression logique suivante
+anyDuplicated(don2)
+
+# 3 lignes sont concernées comme le montre le calcul de la longuer des du vecteur des index 
+#de lignes de don2 qui sont dupliquées
+which(duplicated(don2))
+length(which(duplicated(don2)))
+
+# suppression des doublons de don2
+don2<-don2[!duplicated(don2),]
+dim(don2)
+
+```
+
+### Q16. ### 
+Quels sont les classes de chacune des variables de l'objet **don2** ? Préciser si les variables sont quantitatives (continues ou discrètes) ou qualitatives (nominales ou ordinales).
+
+```{r}
+# nature des variables de don2
+
+cls_don2<-sapply(don2, class)  # Utilisons sapply() pour appliquer la fonction class() à toutes
+                               # les varibles de don2.
+
+cls_don2                       # visualisons le vecteur des différentes classes
+
+
+```
+
+Mettre vos commentaires ici :Le tableau ci-dessous indique pour les variables quantitatives celles qui sont discrètes ou continues et pour les variables qualitatives celles qui sont nominales ou ordinales. il a pu être complété grace à la commande "str(don2)".
+
+ N° | Variable     | Nature      | Type         |
+--- |-------------:|------------:|-------------:|
+ 1  | age          |quantitative | disctète     |
+ 2  | loyer        |quantitative | continue     |
+ 3  | telephone    |quantitative | continue     |
+ 4  | moyenne      |quantitative | continue     |
+ 5  | sexe         |qualitative  | nominale     |
+ 6  | csp          |qualitative  | nominale     |
+ 7  | avenir       |qualitative  | ordinale     |
+ 8  | projet       |qualitative  | ordinale     |
+ 9  | chance       |qualitative  | ordinale     |
+
+
+### Q17. ### 
+Donner les tableaux de fréquences relatives (proportions) des variables qualitatives (i.e. les variables dont la classe est factor)
+
+```{r}
+
+
+liste_table<-sapply(don2[ ,cls_don2=="factor"], table)  # tables d'effectifs sur 
+                                                        #les variables de classe factor
+
+prop_qual<-list(NULL,NULL, NULL, NULL, NULL) # créons une liste réceptacle du résultat final
+  
+  
+ # maintenant une boucle for pour calculer les tables de proportions à partir des tables 
+ # d'effectifs 
+             
+              for(i in 1:length(names(liste_table))) 
+               
+                          {  
+                   
+                            prop_qual[[i]]<-addmargins(prop.table(liste_table[[i]]))
+                   
+                          }
+  
+             
+  names(prop_qual)<-names(liste_table)           # donnons des noms à chaque table de proportions
+  
+  
+  prop_qual                                      # affichons les tables de proportions
+
+```
+
+
+
+
+### Q18. ### 
+Donner la valeur minimum, la valeur moyenne, la valeur médiane et la valeur maximum des variables quantitatives  ?
+
+```{r}
+# appliquons la fonction summary aux variables quantitatives et stockons les résultats
+# dans la matrice param_quant.
+
+param_quant<-sapply(don2[ ,cls_don2 == "numeric" | cls_don2 == "integer"], summary)  
+
+ # extrayons le minimum, la moyenne, la médiane et le maximum pour chacune de 
+ # nos variables en soustrayant le premier et le 3ème quantile de notre matrice param_quant
+  
+  print(param_quant[c(-2,-5), ])
+  
+```
+
+
+### Q19. ### 
+Quelle est la moyenne générale au BAC (variable **moyenne**) en fonction du sexe ? Combien dépensent les étudiants en téléphone (variable **telephone**) en fonction du sexe ?   On pourra utiliser la fonction **by**
+
+```{r}
+# Moyenne générale au BAC et dépenses en téléphone des étudiants
+
+by(don2$moyenne,don2$sexe,mean)         # Moyenne générale au BAC en fonction du sexe
+
+by(don2$telephone,don2$sexe,mean)        # dépenses moyennes en téléphone des étudiants
+                                         # en fonction du sexe
+
+```
+
+### Q20. ### 
+Créer un jeu de données **don3** qui contient les variables quantitatives aggrégées de **don2** en fonction de la CSP. On prendra la moyenne comme fonction de référence pour aggréger les données. Le data frame **don3** devra également contenir les effectifs des étudiants de chacune des catégories de CSP. 
+
+```{r}
+# Aggrégation des variables quantitatives de don3
+
+don3<-aggregate(don2[ ,cls_don2 == "numeric" | cls_don2 == "integer"], list(don2$csp), mean)
+
+don3$effectif<-as.vector(table(don2$csp))    # ajout de la variable effectif des étudiants 
+                                             # de chacune des catégories de CSP
+
+don3                                         #affichage de don3
+
+```
+
+### Question bonus ### 
+En quelques lignes, faire le résumé statistique du jeu de données **don3**. 
+
+Mettre vos commentaires ici :
+
+A l'analyse de don3 on se rend compte que les élèves dont les parents sont Agriculteurs sont les plus agés(28 ans en moyenne), ils sont peu nombreux et ont des dépenses en loyer et télephone parmi les moins élevées.
+
+Les élèves dont les parents sont des cadres supérieurs sont les plus nombreux(42) dans cette classe, ils ont en moyenne 18 ans, un peu plus de 13 de moyenne générale au BAC;ils dépensent 32.23 Euros de téléphone et paient en moyenne des loyers élevés(267.47).
+
+
+Les élèves dont les parents sont chefs d'entreprises sont jeunes(un peu plus de 18ans et demi en moyenne) leur moyenne au BAC sont les plus fortes de la classe,(environ 13.32 sur 20), ils dépensent environ 25 Euros par mois pour le téléphone et 216.15 Euros de loyer pendant la même périonde; Ils sont au nombre de 19.
+ 
+Les élèves dont les parents sont des employés ont eux aussi en moyenne un peu plus de 18 ans et démi d'âge, ils ont une moyenne générale au BAC de 12.26 sur 20, ils dépensent en moyenne près de 26.26 Euros de téléphone et 194.5 Euros de loyer par mois. Ils sont les plus nombreux après ceux dont les parents sont des cadres supérieurs (22).
+
+1 seul élève est issu d'une famille d'ouvriers, il ne dépense rien en téléphone mais a le loyer le plus cher (335 Euros).par contre il est le plus jeune (17 ans) et a eu une moyenne au BAC de 12.78 sur 20.
+
+Les élèves dont les parents sont des professions intermédiaires sont au nombre de 10, ils ont 18 ans et demi de moyenne d'âge, ont une moyenne au BAC de 12.7 sur 20. Ils dépensent en moyenne 21.5 Euros de téléphone et 143 Euros de loyer par mois.
+
+Les élèves dont les parents sont Retraités, Inactifs sont 5, ils ont une moyenne d'âge d'un peu plus de 19 ans et demi, une moyenne au BAC de 11.17 sur 20.Ils dépensent le plus en moyenne pour le téléphone (31 Euros ), leur loyer tourne autour de  153 Euros par mois.
+
+
+
+
+## Annexe
+
+* Exemple d'utilisation de l'opérateur **<=** qui retourne un vecteur de booléen (logical) avec **TRUE** à l'élément $i$ si l'élement $i$ vérifie la condition et **FALSE** sinon : 
+```{r}
+# ce code est un exemple:
+(x1<-rnorm(20))
+x1<=0
+```
+
+* La fonction **which()** appliquée à un vecteur de booléen retourne les indices des éléments qui prennent la valeur **TRUE**:
+```{r}
+# ce code est un exemple:
+which(x1>0)
+which(!x1>0)
+```
+
+*Exemple d'utilisation de la fonction **cut()**. Pour discrétiser la variable **x1** en une variable qualitative à 5 intervalles, ($[-3,-1.96]$, $]-1.96,-0.5]$, $]-0.5,0.5]$, $]0.5,1.96]$ et $]1.96,3]$) on utilise la fonction **cut** ainsi :
+```{r}
+# ce code est un exemple:
+x.quali <- cut(x1, breaks=c(-3,-1.96,-0.5,0.5,1.96,3))
+table(x.quali)
+```

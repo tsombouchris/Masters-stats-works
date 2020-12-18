@@ -1,0 +1,345 @@
+---
+output: word_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(tidy=T, include =T, echo=T, warning=F, message=F, dev ='png', dev.args=list(pointsize=9), 
+ fig.width=6, fig.height=6, fig.path='Figs/')
+```
+---
+title: "Devoir 2 sur R"
+author: "TSOMBOU KINFAK CHRISTIAN"
+date: "A rendre au plus tard le 02/12/2015"
+output: html_document
+---
+# Abstract
+L'objectif de ce devoir est d'appliquer ce que vous avez vu dans les chapitres
+sur les fonctions et les graphiques. Dans le premier exercice, vous allez construire une fonction vous permettant d'automatiser l'importation et la mise en forme d'une base de données. Dans le second exercice, vous allez représenter quelques graphiques vus en cours pour en donner ensuite une interprétation statistique..
+
+# Evaluation
+Les deux exercices sont à traiter. Vous rendrez le devoir dans un fichier au format nom_prenom.R ou nom_prenom.Rmd selon votre choix. Vous commenterez chaque
+ligne de code en utilisant le symbole #. Attention, si vous ne commentez pas votre code, vous serez pénalisés. Par ailleurs, dans le second exercice dans lequel on vous demande de donner des interprétations statistiques, vous écrirez celles-ci en commentaires (fichier R) ou dans le corps du texte (fichier .Rmd).
+
+# Les questions.
+
+## Exercice 1 (sur 10 points).
+L'objectif de cet exercice est de créer une fonction test.data() qui prendra en entrée un seul argument nommé path.file, correspondant au chemin d'accès au fichier à traiter et retournera un data.frame correspondant au fichier de départ "nettoyé", prêt à être utilisé pour une étude statistique.
+
+Commençons par créer un nouveau répertoire de travail ("Dev2"),et sauvegardons y nos bases de données bdd1 et bdd2.
+
+
+```{r}
+test.data<-function(path.file)
+  { 
+  
+   # Vérifacation sur le type de la variable "path.file"
+    stopifnot(is.character(path.file))
+
+#Q1: Importer le fichier de données dans un objet new.file en utilisant la fonction read.table().
+  
+   new.file<-read.table(path.file, header = TRUE, quote = "", sep = "\t")
+  
+  
+#Q2: Vérifions que le nombre de colonnes de new.file est égal à 26 et si ce n'est pas le cas, arrêtons le programme avec un message d'erreur.
+  
+  if(ncol(new.file)!=26) #si condition vérifiée on imprime le message d'erreue
+    {
+    print(warning("Erreur dans"," test.data(",path.file,")",":Le fichier n'a pas le bon nombre de dimension."))
+     } else{ # sinon, on continue avec notre programme
+  
+#Q3: Supprimer les 3 premières colonnes (i.e. les 9 premières variables).
+  
+  new.file<-new.file[,-c(1:9)]  #on garde le même nom en soustrayant les neuf première colonnes
+  
+  
+  
+#Q4: Donner aux variables restantes les noms suivants, dont on donne la définition suivante :
+  
+  colnames(new.file)<-c("sexe.f","sexe.m","age","situ.fami","date.dip","dip","situ.prof","temps.etud","zone","ville.metro","ville.moy.plus","ville.moy.moins","ville.petite","ville.village","salaire","foad","but")
+  
+
+#Q5: Remplacer les valeurs de age inférieures à 16 ou supérieures à 70 par la moyenne de age.
+
+     #A. Identifions d'abord les valeurs abbérantes
+           # Calculons l'intervalle interquatile
+           vec<-stats::fivenum(new.file$age, na.rm = TRUE)
+           iiq<-vec[4]-vec[2]  #différence entre le 75e et le 25e percentiles
+    
+           # En considérant 1,5 comme coefficient, calculons les bornes de de l'étendue des valeurs non abbérantes
+           E<- 1.5*iiq 
+    
+           # Extrayons les rangs des valeurs abbérantes 
+           r.va<-which(( new.file$age > min(vec[4]+E, max(new.file$age)))|(new.file$age < max(vec[2]-E,min(new.file$age)))) # page 17 chapitre 4, partie 2
+     
+    
+    #B. Procédons au remplacement
+          for(i in 1:length(new.file$age))
+            {
+            ifelse( new.file$age[i]<16 | new.file$age[i]>70,mean(new.file$age[-r.va]),new.file$age[i]) #remplacement des ages vérifiant la condition, par la moyenne des valeurs non abérantes
+            }
+          
+    
+#Q6. Remplaçons les valeurs de salaire supérieures à 10000 par ces mêmes valeurs divisées par 12 puis Remplaçons les valeurs manquantes de salaire par la moyenne de salaire.
+
+ 
+   #A.Remplaçons les valeurs de salaire supérieures à 10000 par ces mêmes valeurs divisées par 12
+
+      for(i in 1:length(new.file$salaire))
+            {
+            new.file$salaire[i]<-ifelse(new.file$salaire[i]>10000, new.file$salaire[i]/12 ,new.file$salaire[i])
+            }
+       
+   
+   #B.Remplaçons les valeurs manquantes de salaire par la moyenne de salaire, ici "moy""
+ 
+      moy<-mean(new.file$salaire, na.rm = TRUE ) # calcul de la moyenne en retirant les valeurs manquantes
+
+      for(i in 1:length(new.file$salaire))
+            {
+            new.file$salaire[i]<-ifelse( is.na(new.file$salaire[i]),moy,new.file$salaire[i])
+            } # remplacement des valeurs manquantes
+   
+
+
+# Q7. Créons les variables sexe et ville puis supprimons les colonnes sexe.f, sexe.m, ville.metro,ville.moy.plus, ville.moy.moins, ville.petite et ville.village.
+
+        #A.créons la variable sexe qui vaut f si sexe.f vaut 1 et m sinon.pour cela utilisons une boucle for sur le nombre d'observations de new.file
+          
+          for(i in 1:nrow(new.file)){
+            
+          new.file$sexe[i]<-ifelse(new.file$sexe.f[i]==1,"f","m")
+          
+          }
+      
+          new.file$sexe<-as.factor(new.file$sexe)
+           
+        #B.Créons la variable ville qui vaut metro si ville.metro vaut 1, moy.plus si ville.moy.plus vaut 1,moy.moins si ville.moy.moins vaut 1, petite si ville.petite vaut 1 et village sinon.
+
+         for(i in 1:nrow(new.file)){
+            
+          new.file$ville[i]<-ifelse(new.file$ville.metro[i]==1,"metro",ifelse(new.file$ville.moy.plus[i]==1,"moy.plus",ifelse(new.file$ville.moy.moins[i]==1,"moy.moins",ifelse(new.file$ville.petite[i]==1,"petite","village")))) # utilisation d'une imbrication de ifelse pour satisfaire aux conditions
+           
+             }
+          
+          new.file$ville<-as.factor(new.file$ville) # coercicion à la classe factor
+          
+          
+        #C.Supprimons les colonnes sexe.f, sexe.m, ville.metro, ville.moy.plus, ville.moy.moins,                   ville.petite et ville.village.
+       new.file<-new.file[,!(colnames(new.file)%in%c("sexe.f","sexe.m","ville.metro","ville.moy.plus","ville.moy.moins","ville.petite","ville.village"))] # soustraction de toutes les colonnes donc les noms sont des éléments du vecteur de chaîne de caractères indiqué
+
+
+
+#Q8. Dans les variables zone et situ.fami, remplaçons les valeurs "" par autre.
+       #A.remplaçons les valeurs "" de zone par "autre"
+
+levels(new.file$zone)[which(levels(new.file$zone)=="")]<-"autre" # utilisation de la fonction levels afin de remplacer les valeurs ayant level le caractère "" par de nouvelles ayent pour level le caractère "autre"
+           
+        
+       #B.remplaçons les valeurs "" de situ.fami par "autre"
+
+         levels(new.file$situ.fami)[which(levels(new.file$situ.fami)=="")]<-"autre" # idem que ci-dessus
+  
+      
+# Q9. Remplaçons les valeurs manquantes de temps.etud en utilisant une méthode de notre choix à justifier.     
+      #Pour cette question nous postulons que le nombre d'heures espéré de travail par semaine (variable temps.etud) varie selon les obligations professionnells auxquelles on est ou pas lié (variable situ.prof). la variable situ.prof a 4 modalités, nous allons calculer la moyenne de la variable temps.etud pour les groupes d'observations possédant chacune de ces 4 modalités et celle-ci sera utilisée pour remplacer les valeurs manquantes correspondantes.  
+     
+        #A. commençons par sélectioner les index de temps.etud qui ne correspondent pas aux "NA" (non.na) et celles qui correspondent aux valeurs "NA" (oui.na)
+            non.na<-which(!(is.na(new.file$temps.etud)))
+            oui.na<-which(is.na(new.file$temps.etud))
+        #B. calculons les moyennes de temps.etud par modalité de situ.prof sur les index de non.na    
+         moys<-by (new.file$temps.etud[non.na], new.file$situ.prof[non.na], mean ) 
+         
+        #C. récupérons les noms des éléments de moys qui sont aussiles modalités de situ.prof et procédons au remplacement  
+         nom.moys<-names(moys)
+           
+         for(i in oui.na){
+           new.file$temps.etud[i]<-ifelse(new.file$situ.prof[i]==nom.moys[1],moys[1],
+                                          ifelse(new.file$situ.prof[i]==nom.moys[2],moys[2],
+                                          ifelse(new.file$situ.prof[i]==nom.moys[3],moys[3],
+                                                 moys[4])))
+           
+         }
+ #Q10. Simplifions les modalités de la variable but, par les noms suivants : "avancement" pour "Pour une possibilité d'avancement sur le plan professionnel", "reconversion" pour "Pour une reconversion professionnelle dans un secteur d'activité", "reprise" pour "Pour une reprise d'étude/retour sur le marché de l'emploi" et "développement" pour "Pour votre développement personnel" .        
+    
+    old.mod.but<-levels(new.file$but) # vecteur des anciennes modalités de but
+    new.mod.but<-c("avancement","reconversion","reprise","développement") # nouvelles modalités de but
+    
+      levels(new.file$but)[which(levels(new.file$but)=="Pour une possibilité d'avancement sur le plan professionnel")]<-"avancement"
+      
+      levels(new.file$but)[which(levels(new.file$but)=="Pour une reconversion professionnelle dans un secteur d'activité")]<-"reconversion"
+      
+      levels(new.file$but)[which(levels(new.file$but)=="Pour une reprise d'étude/retour sur le marché de l'emploi")]<-"reprise"
+      
+      levels(new.file$but)[which(levels(new.file$but)=="Pour votre développement personnel")]<-"développement"
+      
+         
+#Q11 retournons l'objet new.file
+         
+        return(new.file)
+     
+   }
+}
+
+```
+
+```{r}
+base.M2<-test.data(path.file = "C:/Users/Tsobouchris/Documents/R Directory/bdd1_ansi.txt")
+head(base.M2)
+base.M2<-base.M2[1:(nrow(base.M2)-2),]
+```
+
+## Exercice 2 (sur 10 points).
+
+```{r}
+# Q1. Représentons graphiquement le lien entre le nombre d'heures que les étudiants espèrent consacrer à la formation (variable Y ) et la situation familiale (variable X).
+
+# Appel de la fonction par() pour un nouveau paramétrage graphique :
+# un fond en gris (bg=), un cadre en blanc (fg=) avec trait épais (lwd=)
+# (l'objet op stocke les paramètres précédemment modifiés)
+op <- par(bg = "darkgrey", fg = "white", lwd = 2)
+
+# créons un data.frame avec les deux variables à représenter et ne retenons que les observations de base.M2 correspondant aux modalités les plus représentées de situ.fami
+
+df<-data.frame(situ.fami=base.M2$situ.fami[base.M2$situ.fami=="Célibataire"|base.M2$situ.fami=="En couple avec enfant(s)",drop=TRUE],temps.etud=base.M2$temps.etud[base.M2$situ.fami=="Célibataire"|base.M2$situ.fami=="En couple avec enfant(s)", drop=TRUE])
+
+
+# Appel d'une fonction de haut-niveau avec en options
+# - la couleur (col=) des boxplots
+# - la légende sur les axes x (xlab=) et y (ylab=)
+boxplot(temps.etud~situ.fami,df,col=c("green3","purple"),xlab = "situation familiale",
+ylab = "temps à consacré à la formation")
+
+# Appel d'une fonction de bas-niveau
+title("lien entre situ.fami et temps.etud") # on met un titre
+
+par(op) # retour au paramétrage graphique précédent stocké dans op
+
+#calculons la moyenne de temps.etud en fonction de situ.fami
+
+moys.temps.etud<-by(base.M2$temps.etud,base.M2$situ.fami,mean)
+
+print(moys.temps.etud)
+```
+
+**Interprétation statistique.**
+
+Selon leur situation familiale ("En couple avec enfant(s)" ou "En couple" ou "Célibataire" ou " autre"), les apprenants en FOAD première année du M2STATECO 2015-2017 entendent en début de formation consacrer des temps moyens à l'étude variant entre 14 et 20,4 heures par semaine.
+Dans un second temps, on constate avec surprise (compte tenu de leur resposabilités familliales plus grande toutes choses égales par ailleurs) que les apprenants en couple avec ou sans enfant(s) envisagent consacrer en moyenne plus de temps à l'étude que leurs camarades. Toutefois, dans ce grand groupe, les apprenants en couple envisagent logiquement consacrer plus de temps à l'étude 20,4 heures par semaine que ceux en couple avec enfants qui en sont à un peu plus de 16 heures. 
+
+enfin les catégories "célibataire" et "autre"" envivisagent consacrer respectivement 14 et 15 heures par semaines. Nous supposons que les curiosités observées ici peuvent être expliquées en prenant en compte les autres variables de la bese de données à l'instar de la situation professionnelle.
+
+```{r,results='asis', message=FALSE}
+
+#Q2. Représentons graphiquement le lien entre le sexe (variable X) et la zone géographique (variable Y ).
+
+# Il s'agit ici de représenter le lien entre deux variables qualitatives
+
+tab <- table(base.M2$sexe, base.M2$zone) # tableau de contingence
+library("knitr")
+kable(tab, caption = "Le tableau de contingence croisant les caractères sexe et zone")
+
+# Appel de la fonction par() pour un nouveau paramétrage graphique 
+op <- par(mfrow=c(1,2), bg = "darkgrey", fg = "white", lwd = 1, oma = c(1, 1, 1, 1), mai = c(2, 10, 2, 5), mar = c(6, 4, 4, 2))
+
+# Appel d'une fonction de haut-niveau avec des options
+barplot(t(tab), cex.lab = 0.6, las = 0, legend.text = TRUE,
+col = c("green3","blue","purple","orange","red","yellow"), args.legend = list(x = "topleft", cex = 0.7))
+
+# Appel d'une fonction de bas-niveau
+title(main = list("zone~sexe", cex = 1.2, font = 3))
+
+# Appel d'une fonction de haut-niveau avec des options
+barplot(tab, beside = TRUE, cex.lab = 0.6,cex.names= 0.7, las = 2,
+horiz = TRUE, legend.text = TRUE,
+col = c("blue","yellow1"),
+args.legend = list(x = "topright", cex = 1))
+# Appel d'une fonction de bas-niveau
+title(main = list("sexe~zone", cex = 1.2, font = 3))
+
+par(op)  # retour au paramétrage graphique précédent stocké dans op
+
+#Renvoyons les profils-lignes de la table de contingence associée à (X= sexe ; Y=la zone).
+
+# calcul des profils en utilisant apply()
+
+PF<-addmargins(tab/apply(tab,1,sum),2)   # divise chaque valeur du tableau de contingence par l'effectif totale de la ligne à laquelle il appartient et ajoute une colonne totale par ligne
+
+kable(PF, caption = "tableau des profils-lignes (profils géographiques par sexe)",cex=1) # renvoie PF 
+
+```
+
+**Interprétation statistique.**
+A l'étude du tableau des profils lignes ci dessus construit, les hommes et les femmes en FOAD première année du M2STATECO_2015-2017 à l'UT1 ne sont pas ressemblants du point de vu de leur profils géographiques (zone du monde dont ils sont originaires) qui, sont différents. En d'autre termes, le profil géographique d'un apprenant n'est pas indépendant de son sexe et donc les caractères sexe et zone sont liés.
+
+```{r}
+#Q3. Représentons graphiquement le lien entre entre l'âge (variable Y ) et la date du dernier diplôme obtenu (variable X).
+
+par(fig = c(0, 0.8, 0, 0.8), mar = c(4, 4, 0, 0), bg = "darkgrey", fg = "white", lwd = 1)
+
+# Appel d'une fonction de haut-niveau avec des options
+plot(age~date.dip, data = base.M2, col = "yellow", pch = 20, cex=2, lty=1.5, cex.lab=1.5)
+with(base.M2, {
+points(mean(date.dip), mean(age), pch = 4, cex = 2)
+
+# Appel de fonctions de bas-niveau pour augmenter des lignes horizontales et verticales
+abline(h = mean(age), lty = 2)
+abline(v = mean(date.dip), lty = 2)
+
+# Appel d'une 1ère fonction de bas-niveau
+lines(lowess(date.dip,age), col = 2,lwd = 2)
+
+# Appel de la fonction par() pour un nouveau paramétrage graphique suivi d'une fonction de haut niveau pour le boxplot de date.dip
+par(fig = c(0, 0.8, 0.7, 1), new=TRUE)
+boxplot(date.dip, col="purple", horizontal = TRUE, axes = FALSE)
+
+# Appel de la fonction par() pour un nouveau paramétrage graphique suivi d'une fonction de haut niveau pour le boxplot de age
+par(fig = c(0.75, 1, 0, 0.8), new = TRUE)
+boxplot(age, col="green3", axes = FALSE)
+
+})
+
+title("Nuage de points des variables date.dip et age",line = -1, outer=TRUE, cex=0.75)
+
+
+```
+
+**Interprétation statistique.**
+En première observation, on note que le nuage de points des années d'obtention du dernier diplôme en fonction des âges des apprenants en première année du M2STATECO est en majorité localisée dans la zone de notre espace à deux dimensions correspondant à ceux ayant récemment (après 2008) obtenus leur dernier diplôme et d'âge relativement jeune( moins de 40 ans ). ceci se traduit en disant que les élèves les plus nombreux sont ceux ayant récemment obtenu leur dernier diplôme et d'un âge relativement jeune.
+
+D'autre part on observe une évolution en sens contraire des deux variables; en effet, plus le dernier diplôme est récent(grande valeur de date.dip) moins l'âge de l'apprenant est avancé(petite valeur de age). l'âge est donc ici une grandeur décroissante de la date d'obtention du dernier diplôme.(voir courbe d'ajustement non paramétrique).
+
+Enfin on note deux valeurs extrèmes pour la date d'obtention du dernier dipôme et une pour l'âge.
+
+
+
+```{r}
+#Q4. Représentons graphiquement le lien entre l'age de l'étudiant (variable Y ) et le sexe de l'étudiant. (variable X).
+ 
+#il s'agit là du croisement d'une variable qualitative et d'une variable quantitative nous allons donc utiliser l'outil boîte à moustache parallèle.
+
+# Appel de la fonction par() pour un nouveau paramétrage graphique 
+op <- par(bg = "darkgrey", fg = "white", lwd = 2)
+
+#couleurs des boxplots
+vec.col = c("purple", "violetred1")
+
+# Appel d'une fonction de haut-niveau avec en options
+# - la couleur (col=) des boxplots
+# - la légende sur les axes x (xlab=) et y (ylab=)
+boxplot(age~sexe, data = base.M2, col = vec.col, xlab = "sexe de l'étudiant", 
+    ylab = "age de l'étudiant")
+
+#Appel d'une fonction de bas-niveau
+title("lien entre le sexe de l'étudiant et son âge") # on met un titre
+
+par(op) # retour au paramétrage graphique précédent stocké dans op
+```
+
+**Interprétation statistique.**
+L'étude de la liaison entre le dernier sexe de l'étudiant et l'âge de l'étudiant consiste en l'étude des différences entre les sous-populations constituées par les différents diplômes: Il y aura absence de lien si on ne distingue pas de différence notoire dans les caractéristiques de ces différentes sous-populations. 
+
+Etant donné que la moitié des scores dans une distribution sont entre les les 25e et 75e percentiles, nous voyons que les âges de la moitié des femmes sont entre 28 et 37 ans, tandis que les âges de la moitié des hommes sont entre 27 et 41 ans. Nous voyons aussi que les hommes s'inscrivent généralement au M2STATECO plus tôt que les femmes et que dans le même temps, un bon nombre d'hommes s'y inscrivent à des âges supérieurs a ceux de toutes les femmes. 
+
+toutefois il faut dire que la principale différences entre la sous population des femmes et celle des hommes est l'étendue des distribution. Ce qui nous amène à dire que le lien entre les deux varibles à l'étude est faible car les caractéristiques des deux sous populations ne sont que légèrement différentes.
+
+
+
